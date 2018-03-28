@@ -2,9 +2,10 @@
   <a href="http://mobbeel.com">
     <img src="http://www.mobbeel.com/wp-content/uploads/2015/03/mobbeel_logo_transparente.png" width="350px">
   </a>
+  <center><h1>Mobbeel fat AAR Gradle plugin</h1></center>
 </p>
 
-# Mobbeel fat AAR Gradle plugin ![license](https://img.shields.io/hexpm/l/plug.svg)
+![license](https://img.shields.io/hexpm/l/plug.svg)
 
 Gradle script that allows you to merge and embed dependencies in generated AAR file on library projects.
 
