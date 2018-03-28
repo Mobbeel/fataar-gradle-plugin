@@ -2,7 +2,7 @@
   <a href="http://mobbeel.com">
     <img src="http://www.mobbeel.com/wp-content/uploads/2015/03/mobbeel_logo_transparente.png" width="350px">
   </a>
-  <center><font size="5">Mobbeel fat AAR Gradle plugin</p></center>
+  <p align="center" style="font-size:180%;">Mobbeel fat AAR Gradle plugin</p>
 </p>
 
 [<img src="https://img.shields.io/hexpm/l/plug.svg">](https://raw.githubusercontent.com/Mobbeel/fataar-gradle-plugin/master/LICENSE)
