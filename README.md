@@ -2,12 +2,16 @@
   <a href="http://mobbeel.com">
     <img src="http://www.mobbeel.com/wp-content/uploads/2015/03/mobbeel_logo_transparente.png" width="350px">
   </a>
-  <center><h1>Mobbeel fat AAR Gradle plugin</h1></center>
+  <center><font size="5">Mobbeel fat AAR Gradle plugin</p></center>
 </p>
 
-![license](https://img.shields.io/hexpm/l/plug.svg)
+[<img src="https://img.shields.io/hexpm/l/plug.svg">](https://raw.githubusercontent.com/Mobbeel/fataar-gradle-plugin/master/LICENSE)
 
-Gradle script that allows you to merge and embed dependencies in generated AAR file on library projects.
+In [Mobbeel](http://www.mobbeel.com/) we work with a complex hierarchy of modules that in turn must embed other dependencies in the resulting AAR. To do this we use this Gradle plugin that allows to merge a project and its dependencies in the same AAR (fat-aar).
+
+Issue reporting are welcome to continue to improve this plugin.
+
+> Plugin work with Android gradle plugin 3.0.0 o higher
 
 ### How to use?
 
