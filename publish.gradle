@@ -19,14 +19,14 @@ uploadArchives {
             def repositoryUrl
             if (version.contains("SNAPSHOT") == false) {
                 println project.name + ' RELEASE BUILD'
-                repositoryUrl = project.hasProperty('mavenReleaseUrl')
+                repositoryUrl = mavenReleaseUrl
             } else {
                 println project.name + ' SNAPSHOT BUILD'
-                repositoryUrl = project.hasProperty('mavenSnapshotsUrl')
+                repositoryUrl = mavenSnapshotsUrl
             }
 
-            def userName = project.hasProperty('mavenUser') ? mavenUser : ""
-            def password = project.hasProperty('mavenPass') ? mavenPass : ""
+            def userName = mavenUser
+            def password = mavenPass
             repository(url: repositoryUrl) {
                 authentication(userName: userName, password: password)
             }

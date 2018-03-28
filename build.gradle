@@ -1,3 +1,16 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.10"
+    }
+}
+
+apply plugin: "com.gradle.plugin-publish"
+
 group GROUP
 version VERSION_NAME
 
@@ -12,6 +25,21 @@ repositories {
 dependencies {
     compile gradleApi()
     compile localGroovy()
-//    compile 'org.codehaus.groovy:groovy-all:2.3.11'
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+pluginBundle {
+    website = 'http://www.mobbeel.com/'
+    vcsUrl = 'https://github.com/Mobbeel/fataar-gradle-plugin'
+    description = 'Gradle plugin to help embed dependencies in generated aar file'
+
+    plugins {
+        copyDependenciesPlugin {
+            id = 'com.mobbeel.plugin'
+            displayName = 'Mobbeel fataar plugin'
+            description = 'Gradle plugin to help embed dependencies in generated aar file'
+            tags = ['mobbeel', 'android']
+            version = '1.0.0'
+        }
+    }
 }
