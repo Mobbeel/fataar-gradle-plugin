@@ -10,10 +10,14 @@ class DependencyProcessorPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         checkAndroidPlugin(project)
+
+//        def extension = project.extensions.create("fataar", PluginExtension, project)
+
         project.afterEvaluate {
             project.android.libraryVariants.all { variant ->
                 def copyTask = project.getTasks().create("copy${variant.name.capitalize()}Dependencies",
                         CopyDependenciesBundle.class, {
+//                    it.includeInnerDepencies = extensionConfig.includeAllInnerDependencies
                     it.dependencies = project.configurations.api.getDependencies()
                     it.variantName = variant.name
                 })
@@ -42,5 +46,9 @@ class DependencyProcessorPlugin implements Plugin<Project> {
             throw new ProjectConfigurationException('fataar plugin must be applied in project that' +
                     ' has android library plugin!', null)
         }
+    }
+
+    class PluginExtension {
+        boolean includeAllInnerDependencies = true
     }
 }

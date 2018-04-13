@@ -6,11 +6,10 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.tasks.TaskAction
 
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
-
 class CopyDependenciesBundle extends DefaultTask {
 
+    String[] packagesToInclude = ["com.mobbeel"]
+    Boolean includeInnerDependencies
     DependencySet dependencies
     String variantName
 
@@ -20,24 +19,12 @@ class CopyDependenciesBundle extends DefaultTask {
             temporaryDir.delete()
         }
         temporaryDir.mkdir()
-        bundleResources()
+
+        copyFromBundles()
         analyzeDependencies()
     }
 
-    def bundleResources() {
-        // Waiting for update to gradle android plugin 3.1.0
-//        project.copy {
-//            from project.projectDir.path + "/build/intermediates/packaged-classes/"
-//            include "${variantName}/**"
-//            into temporaryDir.path
-//        }
-//
-//        project.copy {
-//            from project.projectDir.path + "/build/intermediates/packagedAssets/"
-//            include "${variantName}/**"
-//            into temporaryDir.path
-//        }
-
+    def copyFromBundles() {
         project.copy {
             from project.projectDir.path + "/build/intermediates/bundles/"
             include "${variantName}/**"
@@ -96,29 +83,34 @@ class CopyDependenciesBundle extends DefaultTask {
             into "${temporaryDir.path}/.temp"
         }
 
-        File file = new File("${temporaryDir.path}/.temp")
+        File tempFolder = new File("${temporaryDir.path}/.temp")
 
         project.copy {
-            from "${file.path}"
+            from "${tempFolder.path}"
             include "classes.jar"
             into "${temporaryDir.path}/${variantName}/libs"
             rename "classes.jar", "${dependencyName.toLowerCase()}.jar"
-//          rename '(.*)-debug(.*)', '$1$2'
         }
 
         project.copy {
-            from "${file.path}/jni/"
+            from "${tempFolder.path}/libs"
+            include "**/*.jar"
+            into "${temporaryDir.path}/${variantName}/libs"
+        }
+
+        project.copy {
+            from "${tempFolder.path}/jni"
             include "**/*.so"
             into "${temporaryDir.path}/${variantName}/jni"
         }
 
         project.copy {
-            from "${file.path}/assets"
+            from "${tempFolder.path}/assets"
             include "**/*"
             into "${temporaryDir.path}/${variantName}/assets"
         }
 
-        file.deleteDir()
+        tempFolder.deleteDir()
     }
 
     /**
@@ -152,42 +144,6 @@ class CopyDependenciesBundle extends DefaultTask {
         }
     }
 
-    def addToZipFile(File source, ZipOutputStream zos) {
-        if (source.isDirectory()) {
-            String name = source.getPath().substring(pathFixed)
-            if (!name.isEmpty()) {
-                if (!name.endsWith("/")) {
-                    name += "/"
-                }
-                ZipEntry entry = new ZipEntry(name)
-                entry.setTime(source.lastModified())
-
-                zos.putNextEntry(entry)
-                zos.closeEntry()
-            }
-            for (File nestedFile: source.listFiles()) {
-                addToZipFile(nestedFile, zos)
-            }
-        } else {
-            ZipEntry entry = new ZipEntry(source.getPath().substring(pathFixed))
-            entry.setTime(source.lastModified())
-            zos.putNextEntry(entry)
-            BufferedInputStream input = new BufferedInputStream(new FileInputStream(source))
-
-            byte[] buffer = new byte[1024]
-            while (true) {
-                int count = input.read(buffer)
-                if (count == -1) {
-                    break
-                }
-                zos.write(buffer, 0, count)
-            }
-
-            zos.closeEntry()
-            input.close()
-        }
-    }
-
     def copyArtifactTo(String path) {
         project.copy {
             includeEmptyDirs false
@@ -214,7 +170,7 @@ class CopyDependenciesBundle extends DefaultTask {
 
                 println "   |--> Inner dependency: " +  it.groupId.text() + ":" + it.artifactId.text() + ":" + version
 
-                if (it.groupId.text().contains("com.mobbeel") || it.groupId.text().contains("commons-codec")) {
+                if (it.groupId.text().contains("com.mobbeel") || it.groupId.text().contains("commons-codec") || it.artifactId.text().contains("okio")) {
                     subJarLocation += it.groupId.text() + "/" + it.artifactId.text() + "/" + version + "/"
                     project.fileTree(subJarLocation).getFiles().each { file ->
 
@@ -228,7 +184,7 @@ class CopyDependenciesBundle extends DefaultTask {
                         }
                     }
                 } else {
-                    println "        (Exclude for not Mobbeel dependency)"
+                    println "        (Exclude inner dependency)"
                 }
             }
         }

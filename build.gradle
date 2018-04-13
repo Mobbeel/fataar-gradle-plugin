@@ -39,7 +39,7 @@ pluginBundle {
             displayName = 'Mobbeel fataar plugin'
             description = 'Gradle plugin to help embed dependencies in generated aar file'
             tags = ['mobbeel', 'android']
-            version = '1.0.0'
+            version = VERSION_NAME
         }
     }
 }
