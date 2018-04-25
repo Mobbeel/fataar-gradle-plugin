@@ -6,7 +6,8 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
         classpath "com.gradle.publish:plugin-publish-plugin:0.9.10"
-        classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.0.3"
+//        classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.0.3"
+        classpath files('fataar-plugin/build/libs/fataar-plugin-1.0.3.jar')
     }
 }
 

@@ -8,10 +8,10 @@ import org.gradle.api.tasks.TaskAction
 
 class CopyDependenciesBundle extends DefaultTask {
 
-    String[] packagesToInclude = ["com.mobbeel"]
     Boolean includeInnerDependencies
     DependencySet dependencies
     String variantName
+    String[] packagesToInclude
 
     @TaskAction
     def executeBundleFatAAR() {
@@ -40,9 +40,19 @@ class CopyDependenciesBundle extends DefaultTask {
 
     def analyzeDependencies() {
         dependencies.each { dependency ->
-            if (dependency.group.equals(project.parent.name)) {
+            if (dependency.group == project.parent.name) {
                 println "Internal dependency detected -> " + dependency.name + ":" + dependency.version
-                processInternalDependency(dependency)
+
+                project.parent.getAllprojects().each {
+                    if (it.name == dependency.name) {
+                        if (it.plugins.hasPlugin('java-library')) {
+                            processJavaInternalDependency(dependency)
+                        } else {
+                            processAndroidInternalDependency(dependency)
+                        }
+                    }
+                }
+
             } else {
                 println "External dependency detected -> " + dependency.group + ":" + dependency.name + ":" + dependency.version
                 processExternalDependency(dependency)
@@ -66,10 +76,14 @@ class CopyDependenciesBundle extends DefaultTask {
                 fromPath(project, file.path)
             } else {
                 println "Artifact: " + file.name
-                if (file.name.endsWith(".aar")) {
-                    processZipFile(file, dependency.name)
+                if (!file.name.contains("sources")) {
+                    if (file.name.endsWith(".aar")) {
+                        processZipFile(file, dependency.name)
+                    } else {
+                        copyArtifactTo(file.path)
+                    }
                 } else {
-                    copyArtifactTo(file.path)
+                    println "   |--> Exclude for source jar"
                 }
             }
         }
@@ -120,7 +134,7 @@ class CopyDependenciesBundle extends DefaultTask {
      * @param dependency
      * @return
      */
-    def processInternalDependency(Dependency dependency) {
+    def processAndroidInternalDependency(Dependency dependency) {
         def buildPath = "${project.parent.projectDir.path}/${dependency.name}/build/intermediates"
 
         project.copy {
@@ -141,6 +155,15 @@ class CopyDependenciesBundle extends DefaultTask {
             from "${buildPath}/bundles/${variantName}/assets"
             include "**/*"
             into "${temporaryDir.path}/${variantName}/assets"
+        }
+    }
+
+    def processJavaInternalDependency(Dependency dependency) {
+        def buildPath = "${project.parent.projectDir.path}/${dependency.name}/build/libs/"
+        project.copy {
+            from "${buildPath}"
+            include "${dependency.name}*"
+            into "${temporaryDir.path}/${variantName}/libs"
         }
     }
 
@@ -170,15 +193,15 @@ class CopyDependenciesBundle extends DefaultTask {
 
                 println "   |--> Inner dependency: " +  it.groupId.text() + ":" + it.artifactId.text() + ":" + version
 
-                if (it.groupId.text().contains("com.mobbeel") || it.groupId.text().contains("commons-codec") || it.artifactId.text().contains("okio")) {
+                if (includeInnerDependencies || packagesToInclude.contains(it.groupId.text())) {
+//                if (it.groupId.text().contains("com.mobbeel") || it.groupId.text().contains("commons-codec") || it.artifactId.text().contains("okio")) {
                     subJarLocation += it.groupId.text() + "/" + it.artifactId.text() + "/" + version + "/"
                     project.fileTree(subJarLocation).getFiles().each { file ->
-
-                        if (!file.name.contains("sources")) {
-                            if (file.name.endsWith(".pom")) {
-                                println "   /--> " + file.name
-                                fromPath(project, file.path)
-                            } else {
+                        if (file.name.endsWith(".pom")) {
+                            println "   /--> " + file.name
+                            fromPath(project, file.path)
+                        } else {
+                            if (!file.name.contains("sources")) {
                                 copyArtifactTo(file.path)
                             }
                         }

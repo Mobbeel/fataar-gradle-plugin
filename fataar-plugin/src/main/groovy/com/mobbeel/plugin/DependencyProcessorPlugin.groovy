@@ -11,13 +11,14 @@ class DependencyProcessorPlugin implements Plugin<Project> {
     void apply(Project project) {
         checkAndroidPlugin(project)
 
-//        def extension = project.extensions.create("fataar", PluginExtension, project)
+        def extension = project.extensions.create("fatAARConfig", PluginExtension)
 
         project.afterEvaluate {
             project.android.libraryVariants.all { variant ->
                 def copyTask = project.getTasks().create("copy${variant.name.capitalize()}Dependencies",
                         CopyDependenciesBundle.class, {
-//                    it.includeInnerDepencies = extensionConfig.includeAllInnerDependencies
+                    it.packagesToInclude = extension.packagesToInclude
+                    it.includeInnerDependencies = extension.includeAllInnerDependencies
                     it.dependencies = project.configurations.api.getDependencies()
                     it.variantName = variant.name
                 })
@@ -48,7 +49,8 @@ class DependencyProcessorPlugin implements Plugin<Project> {
         }
     }
 
-    class PluginExtension {
-        boolean includeAllInnerDependencies = true
+    static class PluginExtension {
+        boolean includeAllInnerDependencies
+        String[] packagesToInclude
     }
 }
