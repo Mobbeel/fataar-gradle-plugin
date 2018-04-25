@@ -1,0 +1,33 @@
+apply plugin: "com.gradle.plugin-publish"
+apply plugin: 'groovy'
+apply from: "${rootDir}/gradle/publish.gradle"
+
+group GROUP
+version VERSION_NAME
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+pluginBundle {
+    website = 'http://www.mobbeel.com/'
+    vcsUrl = 'https://github.com/Mobbeel/fataar-gradle-plugin'
+    description = 'Gradle plugin to help embed dependencies in generated aar file'
+
+    plugins {
+        copyDependenciesPlugin {
+            id = 'com.mobbeel.plugin'
+            displayName = 'Mobbeel fataar plugin'
+            description = 'Gradle plugin to help embed dependencies in generated aar file'
+            tags = ['mobbeel', 'android']
+            version = VERSION_NAME
+        }
+    }
+}
