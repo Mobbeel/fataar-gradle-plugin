@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module external.linked.project.id=":fataar-plugin" external.linked.project.path="$MODULE_DIR$" external.root.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" type="JAVA_MODULE" version="4">
+<module external.linked.project.id=":mobbeel-fataar" external.linked.project.path="$MODULE_DIR$" external.root.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" type="JAVA_MODULE" version="4">
   <component name="FacetManager">
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
-        <option name="GRADLE_PROJECT_PATH" value=":fataar-plugin" />
+        <option name="GRADLE_PROJECT_PATH" value=":mobbeel-fataar" />
       </configuration>
     </facet>
     <facet type="java-gradle" name="Java-Gradle">
@@ -18,11 +18,11 @@
     <output-test url="file://$MODULE_DIR$/build/classes/java/test" />
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/src/main/groovy" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/groovy" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/src/test/groovy" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/groovy" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
@@ -34,14 +34,5 @@
     <orderEntry type="library" exported="" scope="PROVIDED" name="gradle-installation-beacon-4.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit-4.12" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="hamcrest-core-1.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3-sources" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
-    <orderEntry type="library" exported="" name="fataar-plugin.fataar-plugin-1.0.3" level="project" />
   </component>
 </module>

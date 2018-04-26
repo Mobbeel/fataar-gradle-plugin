@@ -15,6 +15,10 @@ class CopyDependenciesBundle extends DefaultTask {
 
     @TaskAction
     def executeBundleFatAAR() {
+        if (packagesToInclude == null) {
+            packagesToInclude = [""]
+        }
+
         if (temporaryDir.exists()) {
             temporaryDir.delete()
         }
