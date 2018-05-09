@@ -9,22 +9,22 @@ class DependencyProcessorPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        checkAndroidPlugin(project)
+//        checkAndroidPlugin(project)
 
         def extension = project.extensions.create("fatAARConfig", PluginExtension)
 
         project.afterEvaluate {
             project.android.libraryVariants.all { variant ->
-                def copyTask = project.getTasks().create("copy${variant.name.capitalize()}Dependencies",
-                        CopyDependenciesBundle.class, {
+                checkGradleVersion(project)
+
+                def copyTask = project.getTasks().create("copy${variant.name.capitalize()}Dependencies", CopyDependenciesBundle.class, {
                     it.packagesToInclude = extension.packagesToInclude
                     it.includeInnerDependencies = extension.includeAllInnerDependencies
                     it.dependencies = project.configurations.api.getDependencies()
                     it.variantName = variant.name
                 })
 
-                def aarTask = project.getTasks().create("createZip${variant.name.capitalize()}",
-                        Zip.class, {
+                def aarTask = project.getTasks().create("createZip${variant.name.capitalize()}", Zip.class, {
                     it.from copyTask.temporaryDir.path + "/${variant.name}/"
                     it.include "**"
                     if (variant.name == "debug") {
@@ -42,7 +42,11 @@ class DependencyProcessorPlugin implements Plugin<Project> {
         }
     }
 
-    private void checkAndroidPlugin(Project project) {
+    private static void checkGradleVersion(Project project) {
+//        println project.buildscript.configurations.classpath.resolvedConfiguration.firstLevelModuleDependencies.moduleVersion
+    }
+
+    private static void checkAndroidPlugin(Project project) {
         if (!project.plugins.hasPlugin('com.android.library')) {
             throw new ProjectConfigurationException('fataar plugin must be applied in project that' +
                     ' has android library plugin!', null)

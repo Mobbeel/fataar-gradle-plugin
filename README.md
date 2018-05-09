@@ -44,3 +44,13 @@ Issue reporting are welcome to continue to improve this plugin.
       ...
   }
   ```
+
+### Add to fat AAR all transitive dependencies
+
+A dependency include in fat AAR don't have a **pom.xml**
+ 
+ ```
+ fatAARConfig {
+     includeAllInnerDependencies true  // It's false for default
+ }
+ ```
