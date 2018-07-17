@@ -13,8 +13,6 @@ class CopyDependenciesBundle extends DefaultTask {
     String variantName
     String[] packagesToInclude = [""]
 
-    String projectBuildPath
-
     @TaskAction
     def executeBundleFatAAR() {
         if (temporaryDir.exists()) {
@@ -22,11 +20,11 @@ class CopyDependenciesBundle extends DefaultTask {
         }
         temporaryDir.mkdir()
 
-        copyFromBundles()
+        copyProjectBundles()
         analyzeDependencies()
     }
 
-    def copyFromBundles() {
+    def copyProjectBundles() {
         project.copy {
             from "${project.projectDir.path}/build/intermediates/bundles/"
             include "${variantName}/**"
@@ -42,29 +40,31 @@ class CopyDependenciesBundle extends DefaultTask {
 
     def analyzeDependencies() {
         dependencies.each { dependency ->
-            if (dependency.group == project.parent.name) {
-                projectBuildPath = "${project.parent.projectDir.path}/${dependency.name}/build"
-                println "Internal dependency detected -> " + dependency.name
+            Project dependencyProject = project.parent.findProject(dependency.name)
+            def dependencyPath
+            def archiveName
 
-                project.parent.getAllprojects().each {
-                    if (it.name == dependency.name) {
-                        if (it.plugins.hasPlugin('java-library')) {
-                            processJavaInternalDependency(dependency)
-                        } else {
-                            File ndkBuildFile = new File("${projectBuildPath}/intermediates/ndkBuild")
-                            if (ndkBuildFile.exists()) {
-                                processAndroidNativeInternalDependency(dependency)
-                            } else {
-                                processAndroidInternalDependency(dependency)
-                            }
+            if (dependencyProject != null) {
+                if (dependencyProject.plugins.hasPlugin('java-library')) {
+                    println "Internal java dependency detected -> " + dependency.name
+                    archiveName = dependencyProject.jar.archiveName
+                    dependencyPath = "${dependencyProject.buildDir}/libs/"
+                } else {
+                    println "Internal android dependency detected -> " + dependency.name
+                    dependencyProject.android.libraryVariants.all {
+                        if (it.name == variantName) {
+                            it.outputs.all { archiveName = outputFileName }
                         }
                     }
+                    dependencyPath = "${dependencyProject.buildDir}/outputs/aar/"
                 }
-
             } else {
                 println "External dependency detected -> " + dependency.group + ":" + dependency.name + ":" + dependency.version
-                processExternalDependency(dependency)
+                dependencyPath = project.gradle.getGradleUserHomeDir().path + "/caches/modules-2/files-2.1/"
+                dependencyPath += dependency.group + "/" + dependency.name + "/" + dependency.version + "/"
             }
+
+            processDependency(dependency, archiveName, dependencyPath)
         }
     }
 
@@ -74,24 +74,23 @@ class CopyDependenciesBundle extends DefaultTask {
      * @param dependency
      * @return
      */
-    def processExternalDependency(Dependency dependency) {
-        def jarLocation = project.gradle.getGradleUserHomeDir().path + "/caches/modules-2/files-2.1/"
-        jarLocation += dependency.group + "/" + dependency.name + "/" + dependency.version + "/"
-
-        getProject().fileTree(jarLocation).getFiles().each { file ->
+    def processDependency(Dependency dependency, String archiveName, String dependencyPath) {
+        project.fileTree(dependencyPath).getFiles().each { file ->
             if (file.name.endsWith(".pom")) {
                 println "POM: " + file.name
-                fromPath(project, file.path)
+                fromPath(file.path)
             } else {
-                println "Artifact: " + file.name
-                if (!file.name.contains("sources")) {
+                if (archiveName == null || file.name == archiveName) {
+                    println "Artifact: " + file.name
                     if (file.name.endsWith(".aar")) {
                         processZipFile(file, dependency.name)
-                    } else {
-                        copyArtifactTo(file.path)
+                    } else if (file.name.endsWith(".jar")) {
+                        if (!file.name.contains("sources")) {
+                            copyArtifactTo(file.path)
+                        } else {
+                            println "   |--> Exclude for source jar"
+                        }
                     }
-                } else {
-                    println "   |--> Exclude for source jar"
                 }
             }
         }
@@ -135,51 +134,6 @@ class CopyDependenciesBundle extends DefaultTask {
         tempFolder.deleteDir()
     }
 
-    /**
-     * In this case dependency is a internal project of workspace, then android plugin generate an
-     * AAR but it's not possible embed AAR inside another AAR. Technical decision: Merge resources
-     * of dependency AAR on main AAR, and move classes.jar to lib/ folder
-     * @param dependency
-     */
-    def processAndroidInternalDependency(Dependency dependency) {
-        project.copy {
-            from "${projectBuildPath}/intermediates/intermediate-jars/${variantName}"
-            include "classes.jar"
-            into "${temporaryDir.path}/${variantName}/libs"
-            rename "classes.jar", "${dependency.name.toLowerCase()}.jar"
-//          rename '(.*)-debug(.*)', '$1$2'
-        }
-
-        project.copy {
-            from "${projectBuildPath}/intermediates/jniLibs/${variantName}"
-            include "**/*.so"
-            into "${temporaryDir.path}/${variantName}/jni"
-        }
-
-        project.copy {
-            from "${projectBuildPath}/intermediates/bundles/${variantName}/assets"
-            include "**/*"
-            into "${temporaryDir.path}/${variantName}/assets"
-        }
-    }
-
-    def processAndroidNativeInternalDependency(Dependency dependency) {
-        project.copy {
-            from "${projectBuildPath}/intermediates/ndkBuild/${variantName}/obj/local/"
-            include "**/*.so"
-            into "${temporaryDir.path}/${variantName}/jni"
-        }
-    }
-
-    def processJavaInternalDependency(Dependency dependency) {
-        project.copy {
-            from "${projectBuildPath}/libs/"
-            include "${dependency.name}*"
-            into "${temporaryDir.path}/${variantName}/libs"
-            rename '(.*)', '$1'.toLowerCase()
-        }
-    }
-
     def copyArtifactTo(String path) {
         project.copy {
             includeEmptyDirs false
@@ -191,7 +145,7 @@ class CopyDependenciesBundle extends DefaultTask {
         }
     }
 
-    def fromPath(Project project, String pomPath) {
+    def fromPath(String pomPath) {
         def pom = new XmlSlurper().parse(new File(pomPath))
         pom.dependencies.children().each {
             def subJarLocation = project.gradle.getGradleUserHomeDir().path + "/caches/modules-2/files-2.1/"
@@ -212,7 +166,7 @@ class CopyDependenciesBundle extends DefaultTask {
                     project.fileTree(subJarLocation).getFiles().each { file ->
                         if (file.name.endsWith(".pom")) {
                             println "   /--> " + file.name
-                            fromPath(project, file.path)
+                            fromPath(file.path)
                         } else {
                             if (!file.name.contains("sources")) {
                                 copyArtifactTo(file.path)

@@ -9,14 +9,12 @@ class DependencyProcessorPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-//        checkAndroidPlugin(project)
+        checkAndroidPluginVersion(project)
 
         def extension = project.extensions.create("fatAARConfig", PluginExtension)
 
         project.afterEvaluate {
             project.android.libraryVariants.all { variant ->
-                checkGradleVersion(project)
-
                 def copyTask = project.getTasks().create("copy${variant.name.capitalize()}Dependencies", CopyDependenciesBundle.class, {
                     it.packagesToInclude = extension.packagesToInclude
                     it.includeInnerDependencies = extension.includeAllInnerDependencies
@@ -24,14 +22,15 @@ class DependencyProcessorPlugin implements Plugin<Project> {
                     it.variantName = variant.name
                 })
 
+                String fileOutputName
+                variant.outputs.all {
+                    fileOutputName = outputFileName
+                }
+
                 def aarTask = project.getTasks().create("createZip${variant.name.capitalize()}", Zip.class, {
                     it.from copyTask.temporaryDir.path + "/${variant.name}/"
                     it.include "**"
-                    if (variant.name == "debug") {
-                        it.archiveName "${project.name}-${project.version}-${variant.name}.aar"
-                    } else {
-                        it.archiveName "${project.name}-${project.version}.aar"
-                    }
+                    it.archiveName = fileOutputName
                     it.destinationDir(project.file(project.projectDir.path + "/build/outputs/aar/"))
                 })
 
@@ -42,8 +41,8 @@ class DependencyProcessorPlugin implements Plugin<Project> {
         }
     }
 
-    private static void checkGradleVersion(Project project) {
-//        println project.buildscript.configurations.classpath.resolvedConfiguration.firstLevelModuleDependencies.moduleVersion
+    private static void checkAndroidPluginVersion(Project project) {
+//        println "Android plugin version: " + project.android.version
     }
 
     private static void checkAndroidPlugin(Project project) {
