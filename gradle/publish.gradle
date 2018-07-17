@@ -32,7 +32,7 @@ uploadArchives {
             }
 
             pom.project {
-                name 'fataar-plugin'
+                name 'mobbeel-fataar'
                 description projectDesc
                 groupId GROUP
                 version VERSION_NAME
