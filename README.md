@@ -13,6 +13,18 @@ Issue reporting are welcome to continue to improve this plugin.
 
 > Plugin work with Android gradle plugin 3.0.0 o higher
 
+### Features
+
+* Support external dependencies from workspace (example: ```api "com.mobbeel:my-lib:1.0.0"```)
+
+* Support internal dependencies (example: ```api project(':My-lib-module')```)
+
+* Support internal/external native dependencies
+
+* Support internal/external AAr dependencies
+
+* Support add transitive dependencies from **pom.xml** on jar dependencies
+
 ### How to use?
 
 1. Configure your buildscript to include the plugin:
@@ -23,7 +35,7 @@ Issue reporting are welcome to continue to improve this plugin.
       maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-      classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.0.3"
+      classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.1.5"
     }
   }
   ```
@@ -47,7 +59,8 @@ Issue reporting are welcome to continue to improve this plugin.
 
 ### Add to fat AAR all transitive dependencies
 
-A dependency include in fat AAR don't have a **pom.xml**
+By default, the transitive dependencies that define a dependency are not added to the fat AAR. 
+You can add them by adding these settings:
  
  ```
  fatAARConfig {
