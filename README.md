@@ -35,7 +35,7 @@ Issue reporting are welcome to continue to improve this plugin.
       maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-      classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.1.5"
+      classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.2.0"
     }
   }
   ```
