@@ -20,21 +20,55 @@ class CopyDependenciesBundle extends DefaultTask {
         }
         temporaryDir.mkdir()
 
-        copyProjectBundles()
+        boolean oldStructureUsed = true
+        project.getParent().buildscript.getConfigurations().getByName("classpath").getDependencies().each { Dependency dep ->
+            if (dep.name == "gradle" && dep.version.contains("3.1")) {
+                oldStructureUsed = false
+            }
+        }
+
+        copyProjectBundles(oldStructureUsed)
         analyzeDependencies()
     }
 
-    def copyProjectBundles() {
-        project.copy {
-            from "${project.projectDir.path}/build/intermediates/bundles/"
-            include "${variantName}/**"
-            into temporaryDir.path
-        }
-
-        project.copy {
-            from "${project.projectDir.path}/build/intermediates/manifests/full/${variantName}"
-            include "AndroidManifest.xml"
-            into "${temporaryDir.path}/${variantName}"
+    def copyProjectBundles(boolean oldStructure) {
+        if (oldStructure) {
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/bundles/"
+                from "${project.projectDir.path}/build/intermediates/manifests/full/"
+                include "${variantName}/**"
+                exclude "output.json"
+                into temporaryDir.path
+            }
+        } else {
+            project.copy {
+                from("${project.projectDir.path}/build/intermediates/packaged-classes/") {
+                    include "${variantName}/**"
+                }
+                from("${project.projectDir.path}/build/intermediates/manifests/full/") {
+                    include "${variantName}/**"
+                    exclude "**/output.json"
+                }
+                from("${project.projectDir.path}/build/intermediates/attr/") {
+                    include "*.txt"
+                }
+                into temporaryDir.path
+            }
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/packaged-aidl/${variantName}"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/aidl"
+            }
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/packaged_res/${variantName}"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/res"
+            }
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/packagedAssets/${variantName}"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/assets"
+            }
         }
     }
 
