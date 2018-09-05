@@ -4,9 +4,12 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencySet
+import org.gradle.api.artifacts.ExternalModuleDependency
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.SelfResolvingDependency
 import org.gradle.api.tasks.TaskAction
 
-class CopyDependenciesBundle extends DefaultTask {
+class CopyDependenciesTask extends DefaultTask {
 
     Boolean includeInnerDependencies
     DependencySet dependencies
@@ -74,11 +77,11 @@ class CopyDependenciesBundle extends DefaultTask {
 
     def analyzeDependencies() {
         dependencies.each { dependency ->
-            Project dependencyProject = project.parent.findProject(dependency.name)
             def dependencyPath
             def archiveName
 
-            if (dependencyProject != null) {
+            if (dependency instanceof ProjectDependency) {
+                Project dependencyProject = project.parent.findProject(dependency.name)
                 if (dependencyProject.plugins.hasPlugin('java-library')) {
                     println "Internal java dependency detected -> " + dependency.name
                     archiveName = dependencyProject.jar.archiveName
@@ -92,13 +95,23 @@ class CopyDependenciesBundle extends DefaultTask {
                     }
                     dependencyPath = "${dependencyProject.buildDir}/outputs/aar/"
                 }
-            } else {
+
+                processDependency(dependency, archiveName, dependencyPath)
+            } else if (dependency instanceof ExternalModuleDependency) {
                 println "External dependency detected -> " + dependency.group + ":" + dependency.name + ":" + dependency.version
                 dependencyPath = project.gradle.getGradleUserHomeDir().path + "/caches/modules-2/files-2.1/"
                 dependencyPath += dependency.group + "/" + dependency.name + "/" + dependency.version + "/"
-            }
 
-            processDependency(dependency, archiveName, dependencyPath)
+                processDependency(dependency, archiveName, dependencyPath)
+            } else if (dependency instanceof SelfResolvingDependency) {
+                SelfResolvingDependency resolvingDependency = (SelfResolvingDependency) dependency
+                println "File tree: " + resolvingDependency.properties.buildDependencies
+//                copyArtifactFrom("${project.projectDir}/libs")
+                println()
+            } else {
+                println "Not recognize type of dependency for " + dependency
+                println()
+            }
         }
     }
 
@@ -120,7 +133,7 @@ class CopyDependenciesBundle extends DefaultTask {
                         processZipFile(file, dependency.name)
                     } else if (file.name.endsWith(".jar")) {
                         if (!file.name.contains("sources")) {
-                            copyArtifactTo(file.path)
+                            copyArtifactFrom(file.path)
                         } else {
                             println "   |--> Exclude for source jar"
                         }
@@ -135,10 +148,10 @@ class CopyDependenciesBundle extends DefaultTask {
         project.copy {
             from project.zipTree(aarFile.path)
             include "**/*"
-            into "${temporaryDir.path}/.temp"
+            into "${temporaryDir.path}/temp_zip"
         }
 
-        File tempFolder = new File("${temporaryDir.path}/.temp")
+        File tempFolder = new File("${temporaryDir.path}/temp_zip")
 
         project.copy {
             from "${tempFolder.path}"
@@ -165,10 +178,22 @@ class CopyDependenciesBundle extends DefaultTask {
             into "${temporaryDir.path}/${variantName}/assets"
         }
 
+        project.copy {
+            from "${tempFolder.path}/"
+            include "**/*.txt"
+            into "${temporaryDir.path}/${variantName}/"
+        }
+
+        project.copy {
+            from "${tempFolder.path}/"
+            include "annotations.zip"
+            into "${temporaryDir.path}/${variantName}/"
+        }
+
         tempFolder.deleteDir()
     }
 
-    def copyArtifactTo(String path) {
+    def copyArtifactFrom(String path) {
         project.copy {
             includeEmptyDirs false
             from path
@@ -203,7 +228,7 @@ class CopyDependenciesBundle extends DefaultTask {
                             fromPath(file.path)
                         } else {
                             if (!file.name.contains("sources")) {
-                                copyArtifactTo(file.path)
+                                copyArtifactFrom(file.path)
                             }
                         }
                     }

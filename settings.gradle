@@ -1,1 +1,4 @@
-include ':mobbeel-fataar', ':example-lib', ':example-nested-lib', ':example-nested-java-lib', ':example-nested-native-lib'
+include ':example-lib'
+include ':example-nested-lib'
+include ':example-nested-java-lib'
+include ':example-nested-native-lib'

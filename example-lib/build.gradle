@@ -20,10 +20,14 @@ android {
 }
 
 dependencies {
+//    api fileTree(dir: 'libs', include: '*.jar') // Example with local libs folder
+
     api project(path: ':example-nested-lib') // Example with internal android dependency
     api project(path: ':example-nested-native-lib') // Example with internal native dependency
     api project(path: ':example-nested-java-lib') // Example with internal java dependency
+
     api 'com.squareup.okio:okio:1.14.0' // Example with external dependency
+    api 'com.asksira.android:cameraviewplus:0.9.5' // Example with complex AAR (Need merge resources)
 
     implementation 'com.android.support:appcompat-v7:27.1.1'
 }
