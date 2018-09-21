@@ -1,5 +1,6 @@
-package com.mobbeel.plugin
+package com.mobbeel.plugin.task
 
+import groovy.xml.XmlUtil
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
@@ -17,7 +18,7 @@ class CopyDependenciesTask extends DefaultTask {
     String[] packagesToInclude = [""]
 
     @TaskAction
-    def executeBundleFatAAR() {
+    def executeTask() {
         if (temporaryDir.exists()) {
             temporaryDir.deleteDir()
         }
@@ -52,10 +53,13 @@ class CopyDependenciesTask extends DefaultTask {
                     include "${variantName}/**"
                     exclude "**/output.json"
                 }
-                from("${project.projectDir.path}/build/intermediates/attr/") {
-                    include "*.txt"
-                }
                 into temporaryDir.path
+            }
+            project.copy {
+                from"${project.projectDir.path}/build/intermediates/res/symbol-table-with-package/${variantName}"
+                include "package-aware-r.txt"
+                rename '(.*)', 'R.txt'
+                into "${temporaryDir.path}/${variantName}"
             }
             project.copy {
                 from "${project.projectDir.path}/build/intermediates/packaged-aidl/${variantName}"
@@ -125,7 +129,7 @@ class CopyDependenciesTask extends DefaultTask {
         project.fileTree(dependencyPath).getFiles().each { file ->
             if (file.name.endsWith(".pom")) {
                 println "POM: " + file.name
-                fromPath(file.path)
+                processPomFile(file.path)
             } else {
                 if (archiveName == null || file.name == archiveName) {
                     println "Artifact: " + file.name
@@ -145,13 +149,15 @@ class CopyDependenciesTask extends DefaultTask {
     }
 
     def processZipFile(File aarFile, String dependencyName) {
+        String tempDirPath = "${temporaryDir.path}/${dependencyName}_zip"
+
         project.copy {
             from project.zipTree(aarFile.path)
             include "**/*"
-            into "${temporaryDir.path}/temp_zip"
+            into tempDirPath
         }
 
-        File tempFolder = new File("${temporaryDir.path}/temp_zip")
+        File tempFolder = new File(tempDirPath)
 
         project.copy {
             from "${tempFolder.path}"
@@ -179,18 +185,84 @@ class CopyDependenciesTask extends DefaultTask {
         }
 
         project.copy {
-            from "${tempFolder.path}/"
-            include "**/*.txt"
-            into "${temporaryDir.path}/${variantName}/"
+            from "${tempFolder.path}/res"
+            include "**/*"
+            exclude "values/**"
+            into "${temporaryDir.path}/${variantName}/res"
         }
 
-        project.copy {
-            from "${tempFolder.path}/"
-            include "annotations.zip"
-            into "${temporaryDir.path}/${variantName}/"
-        }
+        processValuesResource(tempFolder.path)
+        processRsFile(tempFolder)
 
         tempFolder.deleteDir()
+    }
+
+    def processRsFile(File tempFolder) {
+        def mainManifestFile = project.android.sourceSets.main.manifest.srcFile
+        def libPackageName = ""
+
+        if (mainManifestFile.exists()) {
+            libPackageName = new XmlParser().parse(mainManifestFile).@package
+        }
+
+        def manifestFile = new File("$tempFolder/AndroidManifest.xml")
+        if (manifestFile.exists()) {
+            def aarManifest = new XmlParser().parse(manifestFile)
+            def aarPackageName = aarManifest.@package
+
+            String packagePath = aarPackageName.replace('.', '/')
+
+            // Generate the R.java file and map to current project's R.java
+            // This will recreate the class file
+            def rTxt = new File("$tempFolder/R.txt")
+            def rMap = new ConfigObject()
+
+            if (rTxt.exists()) {
+                rTxt.eachLine { line ->
+                    //noinspection GroovyUnusedAssignment
+                    def (type, subclass, name, value) = line.tokenize(' ')
+                    rMap[subclass].putAt(name, type)
+                }
+            }
+
+            def sb = "package $aarPackageName;" << '\n' << '\n'
+            sb << 'public final class R {' << '\n'
+
+            rMap.each { subclass, values ->
+                sb << "  public static final class $subclass {" << '\n'
+                values.each { name, type ->
+                    sb << "    public static $type $name = ${libPackageName}.R.${subclass}.${name};" << '\n'
+                }
+                sb << "    }" << '\n'
+            }
+
+            sb << '}' << '\n'
+
+            new File("${temporaryDir.path}/rs/$packagePath").mkdirs()
+            FileOutputStream outputStream = new FileOutputStream("${temporaryDir.path}/rs/$packagePath/R.java")
+            outputStream.write(sb.toString().getBytes())
+            outputStream.close()
+        }
+    }
+
+    def processValuesResource(String tempFolder) {
+        File valuesSourceFile = new File("${tempFolder}/res/values/values.xml")
+        File valuesDestFile = new File("${temporaryDir.path}/${variantName}/res/values/values.xml")
+
+        if (valuesSourceFile.exists() && valuesDestFile.exists()) {
+            def valuesSource = new XmlSlurper().parse(valuesSourceFile)
+            def valuesDest = new XmlSlurper().parse(valuesDestFile)
+
+            valuesSource.children().each {
+                println it.name()
+                valuesDest.appendNode(it)
+            }
+
+            FileOutputStream fileOutputStream = new FileOutputStream(valuesDestFile, false)
+            byte[] myBytes = XmlUtil.serialize(valuesDest).getBytes()
+            fileOutputStream.write(myBytes)
+            fileOutputStream.close()
+        }
     }
 
     def copyArtifactFrom(String path) {
@@ -198,13 +270,12 @@ class CopyDependenciesTask extends DefaultTask {
             includeEmptyDirs false
             from path
             include "**/*.jar"
-            include "**/*.aar"
-            into temporaryDir.path + "/${variantName}/libs"
+            into "${temporaryDir.path}/${variantName}/libs"
             rename '(.*)', '$1'.toLowerCase()
         }
     }
 
-    def fromPath(String pomPath) {
+    def processPomFile(String pomPath) {
         def pom = new XmlSlurper().parse(new File(pomPath))
         pom.dependencies.children().each {
             def subJarLocation = project.gradle.getGradleUserHomeDir().path + "/caches/modules-2/files-2.1/"
@@ -225,7 +296,7 @@ class CopyDependenciesTask extends DefaultTask {
                     project.fileTree(subJarLocation).getFiles().each { file ->
                         if (file.name.endsWith(".pom")) {
                             println "   /--> " + file.name
-                            fromPath(file.path)
+                            processPomFile(file.path)
                         } else {
                             if (!file.name.contains("sources")) {
                                 copyArtifactFrom(file.path)
