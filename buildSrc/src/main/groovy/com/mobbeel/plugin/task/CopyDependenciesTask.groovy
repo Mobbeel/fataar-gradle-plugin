@@ -107,11 +107,6 @@ class CopyDependenciesTask extends DefaultTask {
                 dependencyPath += dependency.group + "/" + dependency.name + "/" + dependency.version + "/"
 
                 processDependency(dependency, archiveName, dependencyPath)
-            } else if (dependency instanceof SelfResolvingDependency) {
-                SelfResolvingDependency resolvingDependency = (SelfResolvingDependency) dependency
-                println "File tree: " + resolvingDependency.properties.buildDependencies
-//                copyArtifactFrom("${project.projectDir}/libs")
-                println()
             } else {
                 println "Not recognize type of dependency for " + dependency
                 println()
