@@ -21,9 +21,11 @@ Issue reporting are welcome to continue to improve this plugin.
 
 * Support internal/external native dependencies
 
-* Support internal/external AAr dependencies
+* Support internal/external AAR dependencies
 
 * Support add transitive dependencies from **pom.xml** on jar dependencies
+
+* [NEW] Merge resources from AAR dependencies
 
 ### How to use?
 
@@ -35,7 +37,7 @@ Issue reporting are welcome to continue to improve this plugin.
       maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-      classpath "gradle.plugin.com.mobbeel.plugin:mobbeel-fataar:1.2.0"
+      classpath "com.mobbeel.plugin:fat-aar:2.0.1"
     }
   }
   ```
@@ -63,7 +65,7 @@ By default, the transitive dependencies that define a dependency are not added t
 You can add them by adding these settings:
  
  ```
- fatAARConfig {
+ aarPlugin {
      includeAllInnerDependencies true  // It's false for default
  }
  ```
