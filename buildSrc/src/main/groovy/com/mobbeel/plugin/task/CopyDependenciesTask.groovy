@@ -55,12 +55,15 @@ class CopyDependenciesTask extends DefaultTask {
                 }
                 into temporaryDir.path
             }
+
             project.copy {
                 from"${project.projectDir.path}/build/intermediates/res/symbol-table-with-package/${variantName}"
                 include "package-aware-r.txt"
                 rename '(.*)', 'R.txt'
                 into "${temporaryDir.path}/${variantName}"
             }
+            processRsAwareFile(new File("${temporaryDir.path}/${variantName}/R.txt"))
+            
             project.copy {
                 from "${project.projectDir.path}/build/intermediates/packaged-aidl/${variantName}"
                 include "**"
@@ -190,6 +193,29 @@ class CopyDependenciesTask extends DefaultTask {
         processRsFile(tempFolder)
 
         tempFolder.deleteDir()
+    }
+    
+    def processRsAwareFile(File resAwareFile) {
+        RandomAccessFile raf = new RandomAccessFile(resAwareFile, "rw")
+
+        long writePosition = raf.getFilePointer()
+        raf.readLine() // Move pointer to second line of file
+        long readPosition = raf.getFilePointer()
+
+        byte[] buffer = new byte[1024]
+        int bytesInBuffer
+
+        while (-1 != (bytesInBuffer = raf.read(buffer))) {
+            raf.seek(writePosition)
+
+            raf.write(buffer, 0, bytesInBuffer)
+            readPosition += bytesInBuffer
+            writePosition += bytesInBuffer
+
+            raf.seek(readPosition)
+        }
+        raf.setLength(writePosition)
+        raf.close()
     }
 
     def processRsFile(File tempFolder) {
