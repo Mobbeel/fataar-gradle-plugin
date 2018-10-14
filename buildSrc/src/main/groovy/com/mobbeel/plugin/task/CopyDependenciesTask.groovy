@@ -275,7 +275,6 @@ class CopyDependenciesTask extends DefaultTask {
             def valuesDest = new XmlSlurper().parse(valuesDestFile)
 
             valuesSource.children().each {
-                println it.name()
                 valuesDest.appendNode(it)
             }
 
