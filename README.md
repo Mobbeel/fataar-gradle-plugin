@@ -1,6 +1,6 @@
 <p align="center">
   <a href="http://mobbeel.com">
-    <img src="http://www.mobbeel.com/wp-content/uploads/2015/03/mobbeel_logo_transparente.png" width="350px">
+    <img src="https://www.mobbeel.com/wp-content/uploads/2018/08/logo-mobbeel.png" width="350px">
   </a>
   <p align="center" style="font-size:180%;">Mobbeel fat AAR Gradle plugin</p>
 </p>
