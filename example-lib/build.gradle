@@ -20,7 +20,7 @@ android {
 }
 
 dependencies {
-//    api fileTree(dir: 'libs', include: '*.jar') // Example with local libs folder
+    api fileTree(dir: 'libs', include: '*.jar') // Example with local libs folder
 
     api project(path: ':example-nested-lib') // Example with internal android dependency
     api project(path: ':example-nested-native-lib') // Example with internal native dependency

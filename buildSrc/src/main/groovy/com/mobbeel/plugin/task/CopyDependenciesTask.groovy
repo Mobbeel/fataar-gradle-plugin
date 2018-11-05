@@ -15,6 +15,7 @@ class CopyDependenciesTask extends DefaultTask {
     Boolean includeInnerDependencies
     DependencySet dependencies
     String variantName
+    String gradleVersion
     String[] packagesToInclude = [""]
 
     @TaskAction
@@ -24,27 +25,45 @@ class CopyDependenciesTask extends DefaultTask {
         }
         temporaryDir.mkdir()
 
-        boolean oldStructureUsed = true
-        project.getParent().buildscript.getConfigurations().getByName("classpath").getDependencies().each { Dependency dep ->
-            if (dep.name == "gradle" && dep.version.contains("3.1")) {
-                oldStructureUsed = false
-            }
-        }
-
-        copyProjectBundles(oldStructureUsed)
+        copyProjectBundles()
         analyzeDependencies()
     }
 
-    def copyProjectBundles(boolean oldStructure) {
-        if (oldStructure) {
+    def copyProjectBundles() {
+        if (gradleVersion.contains("3.2")) { // Version 3.2.x
             project.copy {
-                from "${project.projectDir.path}/build/intermediates/bundles/"
-                from "${project.projectDir.path}/build/intermediates/manifests/full/"
+                from "${project.projectDir.path}/build/intermediates/packaged-classes/"
                 include "${variantName}/**"
-                exclude "output.json"
                 into temporaryDir.path
             }
-        } else {
+
+            project.copy {
+                from("${project.projectDir.path}/build/intermediates/res/symbol-table-with-package/${variantName}") {
+                    include "package-aware-r.txt"
+                    rename '(.*)', 'R.txt'
+                }
+
+                from("${project.projectDir.path}/build/intermediates/aapt_friendly_merged_manifests/" +
+                        "${variantName}/process${variantName.capitalize()}Manifest/aapt/") {
+                    include "AndroidManifest.xml"
+                }
+
+                into "${temporaryDir.path}/${variantName}"
+            }
+            processRsAwareFile(new File("${temporaryDir.path}/${variantName}/R.txt"))
+
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/packaged_res/${variantName}"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/res"
+            }
+
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/library_assets/${variantName}/packageDebugAssets/out/"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/assets"
+            }
+        } else if (gradleVersion.contains("3.1")) { // Version 3.1.x
             project.copy {
                 from("${project.projectDir.path}/build/intermediates/packaged-classes/") {
                     include "${variantName}/**"
@@ -78,6 +97,14 @@ class CopyDependenciesTask extends DefaultTask {
                 from "${project.projectDir.path}/build/intermediates/packagedAssets/${variantName}"
                 include "**"
                 into "${temporaryDir.path}/${variantName}/assets"
+            }
+        } else { // Version 3.0.x
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/bundles/"
+                from "${project.projectDir.path}/build/intermediates/manifests/full/"
+                include "${variantName}/**"
+                exclude "output.json"
+                into temporaryDir.path
             }
         }
     }
@@ -215,6 +242,48 @@ class CopyDependenciesTask extends DefaultTask {
             raf.seek(readPosition)
         }
         raf.setLength(writePosition)
+
+        if (gradleVersion.contains("3.2")) {
+            String filePath = "${project.projectDir.path}/build/intermediates/symbols/${variantName}/R.txt"
+            Scanner resourcesOriginal = new Scanner(new File(filePath))
+
+            raf.seek(0) // Move pointer to first line
+
+            String queryLine
+            int offset = 0
+            while ((queryLine = raf.readLine()) != null) {
+                boolean match = false
+
+                String line
+                while (!match && resourcesOriginal.hasNextLine()) {
+                    line = resourcesOriginal.nextLine()
+                    if (line.contains(queryLine)) {
+                        match = true
+                    }
+                }
+
+                if (match && line != null) {
+                    line += "\n"
+
+                    println line
+                    println line.getBytes()
+                    println line.getBytes().length
+                    println offset
+
+                    byte[] data = line.getBytes()
+
+                    raf.seek(offset)
+                    raf.write(data, 0, data.length)
+                    offset += data.length
+
+                    raf.seek(offset + 1)
+                } else {
+                    raf.close()
+                    throw new IllegalStateException("R.txt cannot generate")
+                }
+            }
+        }
+
         raf.close()
     }
 
