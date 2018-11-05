@@ -270,18 +270,26 @@ class CopyDependenciesTask extends DefaultTask {
         File valuesSourceFile = new File("${tempFolder}/res/values/values.xml")
         File valuesDestFile = new File("${temporaryDir.path}/${variantName}/res/values/values.xml")
 
-        if (valuesSourceFile.exists() && valuesDestFile.exists()) {
-            def valuesSource = new XmlSlurper().parse(valuesSourceFile)
-            def valuesDest = new XmlSlurper().parse(valuesDestFile)
+        if (valuesSourceFile.exists()) {
+            if (!valuesDestFile.exists()) {
+                project.copy {
+                    from "${tempFolder}/res"
+                    include "values/*"
+                    into "${temporaryDir.path}/${variantName}/res"
+                }
+            } else {
+                def valuesSource = new XmlSlurper().parse(valuesSourceFile)
+                def valuesDest = new XmlSlurper().parse(valuesDestFile)
 
-            valuesSource.children().each {
-                valuesDest.appendNode(it)
+                valuesSource.children().each {
+                    valuesDest.appendNode(it)
+                }
+
+                FileOutputStream fileOutputStream = new FileOutputStream(valuesDestFile, false)
+                byte[] myBytes = XmlUtil.serialize(valuesDest).getBytes()
+                fileOutputStream.write(myBytes)
+                fileOutputStream.close()
             }
-
-            FileOutputStream fileOutputStream = new FileOutputStream(valuesDestFile, false)
-            byte[] myBytes = XmlUtil.serialize(valuesDest).getBytes()
-            fileOutputStream.write(myBytes)
-            fileOutputStream.close()
         }
     }
 
