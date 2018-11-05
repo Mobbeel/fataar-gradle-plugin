@@ -132,7 +132,7 @@ class CopyDependenciesTask extends DefaultTask {
                 if (archiveName == null || file.name == archiveName) {
                     println "Artifact: " + file.name
                     if (file.name.endsWith(".aar")) {
-                        processZipFile(file, dependency.name)
+                        processZipFile(file, dependency)
                     } else if (file.name.endsWith(".jar")) {
                         if (!file.name.contains("sources")) {
                             copyArtifactFrom(file.path)
@@ -146,8 +146,8 @@ class CopyDependenciesTask extends DefaultTask {
         println()
     }
 
-    def processZipFile(File aarFile, String dependencyName) {
-        String tempDirPath = "${temporaryDir.path}/${dependencyName}_zip"
+    def processZipFile(File aarFile, Dependency dependency) {
+        String tempDirPath = "${temporaryDir.path}/${dependency.name}_zip"
 
         project.copy {
             from project.zipTree(aarFile.path)
@@ -161,7 +161,7 @@ class CopyDependenciesTask extends DefaultTask {
             from "${tempFolder.path}"
             include "classes.jar"
             into "${temporaryDir.path}/${variantName}/libs"
-            rename "classes.jar", "${dependencyName.toLowerCase()}.jar"
+            rename "classes.jar", "${dependency.group.toLowerCase()}-${dependency.name.toLowerCase()}-${dependency.version}.jar"
         }
 
         project.copy {
