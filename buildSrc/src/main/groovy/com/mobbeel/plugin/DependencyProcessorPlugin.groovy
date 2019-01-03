@@ -23,7 +23,7 @@ class DependencyProcessorPlugin implements Plugin<Project> {
         this.extension = project.extensions.create("aarPlugin", PluginExtension)
 
         project.parent.buildscript.getConfigurations().getByName("classpath").getDependencies().each { Dependency dep ->
-            if (dep.name == "gradle") {
+            if (dep.group == "com.android.tools.build" && dep.name == "gradle") {
                 gradleVersion = dep.version
             }
         }
