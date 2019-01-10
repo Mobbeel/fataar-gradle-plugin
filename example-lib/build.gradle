@@ -19,8 +19,15 @@ android {
     }
 }
 
+repositories {
+    flatDir {
+        dirs "$projectDir/libs"
+    }
+}
+
 dependencies {
     api fileTree(dir: 'libs', include: '*.jar') // Example with local libs folder
+    api (name: 'example-local-native-lib-in-libs', ext: 'aar') // Example with native aar in local libs folder
 
     api project(path: ':example-nested-lib') // Example with internal android dependency
     api project(path: ':example-nested-native-lib') // Example with internal native dependency

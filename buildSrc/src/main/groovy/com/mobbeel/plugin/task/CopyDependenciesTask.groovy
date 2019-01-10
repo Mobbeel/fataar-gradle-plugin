@@ -136,6 +136,11 @@ class CopyDependenciesTask extends DefaultTask {
                 dependencyPath = project.gradle.getGradleUserHomeDir().path + "/caches/modules-2/files-2.1/"
                 dependencyPath += dependency.group + "/" + dependency.name + "/" + dependency.version + "/"
 
+                def file = new File(dependencyPath)
+                if(false == file.exists()) {
+                    dependencyPath = project.projectDir.path + "/libs/"
+                }
+
                 processDependency(dependency, archiveName, dependencyPath)
             } else {
                 println "Not recognize type of dependency for " + dependency
