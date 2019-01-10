@@ -188,7 +188,8 @@ class CopyDependenciesTask extends DefaultTask {
             from "${tempFolder.path}"
             include "classes.jar"
             into "${temporaryDir.path}/${variantName}/libs"
-            rename "classes.jar", "${dependency.group.toLowerCase()}-${dependency.name.toLowerCase()}-${dependency.version}.jar"
+            def jarName = getJarNameFromDependency(dependency)
+            rename "classes.jar", jarName
         }
 
         project.copy {
@@ -220,6 +221,20 @@ class CopyDependenciesTask extends DefaultTask {
         processRsFile(tempFolder)
 
         tempFolder.deleteDir()
+    }
+
+    def getJarNameFromDependency(Dependency dependency) {
+        def jarName = ""
+        if (null != dependency.group) {
+            jarName += dependency.group.toLowerCase() + "-"
+        }
+        jarName += dependency.name.toLowerCase()
+        if(null != dependency.version && !dependency.version.equalsIgnoreCase('unspecified')) {
+            jarName += "-" + dependency.version
+        }
+        jarName += ".jar"
+
+        return jarName
     }
     
     def processRsAwareFile(File resAwareFile) {
