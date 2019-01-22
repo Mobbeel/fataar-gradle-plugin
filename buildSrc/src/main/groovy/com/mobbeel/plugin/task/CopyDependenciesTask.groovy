@@ -370,7 +370,7 @@ class CopyDependenciesTask extends DefaultTask {
                 }
 
                 FileOutputStream fileOutputStream = new FileOutputStream(valuesDestFile, false)
-                byte[] myBytes = XmlUtil.serialize(valuesDest).getBytes()
+                byte[] myBytes = XmlUtil.serialize(valuesDest).getBytes("UTF-8")
                 fileOutputStream.write(myBytes)
                 fileOutputStream.close()
             }
