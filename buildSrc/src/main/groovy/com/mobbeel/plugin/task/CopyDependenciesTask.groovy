@@ -63,6 +63,14 @@ class CopyDependenciesTask extends DefaultTask {
                 include "**"
                 into "${temporaryDir.path}/${variantName}/assets"
             }
+            project.copy {
+                def proguardDir = "/merge${variantName.capitalize()}ConsumerProguardFiles"
+                def proguardPath = "${project.projectDir.path}/build/intermediates/consumer_proguard_file/"
+                def path = proguardPath + "${variantName}" + proguardDir
+                from path
+                include "**"
+                into "${temporaryDir.path}/${variantName}/"
+            }
         } else if (gradleVersion.contains("3.1")) { // Version 3.1.x
             project.copy {
                 from("${project.projectDir.path}/build/intermediates/packaged-classes/") {
