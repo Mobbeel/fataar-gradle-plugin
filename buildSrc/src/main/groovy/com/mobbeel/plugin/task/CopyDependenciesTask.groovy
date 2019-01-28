@@ -98,6 +98,11 @@ class CopyDependenciesTask extends DefaultTask {
                 include "**"
                 into "${temporaryDir.path}/${variantName}/assets"
             }
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/publish-proguard/${variantName}"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/"
+            }
         } else { // Version 3.0.x
             project.copy {
                 from "${project.projectDir.path}/build/intermediates/bundles/"
