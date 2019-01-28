@@ -116,7 +116,7 @@ class CopyDependenciesTask extends DefaultTask {
                 from "${project.projectDir.path}/build/intermediates/bundles/"
                 from "${project.projectDir.path}/build/intermediates/manifests/full/"
                 include "${variantName}/**"
-                exclude "output.json"
+                exclude "**/output.json"
                 into temporaryDir.path
             }
         }
