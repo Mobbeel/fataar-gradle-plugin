@@ -63,6 +63,14 @@ class CopyDependenciesTask extends DefaultTask {
                 include "**"
                 into "${temporaryDir.path}/${variantName}/assets"
             }
+            project.copy {
+                def proguardDir = "/merge${variantName.capitalize()}ConsumerProguardFiles"
+                def proguardPath = "${project.projectDir.path}/build/intermediates/consumer_proguard_file/"
+                def path = proguardPath + "${variantName}" + proguardDir
+                from path
+                include "**"
+                into "${temporaryDir.path}/${variantName}/"
+            }
         } else if (gradleVersion.contains("3.1")) { // Version 3.1.x
             project.copy {
                 from("${project.projectDir.path}/build/intermediates/packaged-classes/") {
@@ -98,12 +106,17 @@ class CopyDependenciesTask extends DefaultTask {
                 include "**"
                 into "${temporaryDir.path}/${variantName}/assets"
             }
+            project.copy {
+                from "${project.projectDir.path}/build/intermediates/publish-proguard/${variantName}"
+                include "**"
+                into "${temporaryDir.path}/${variantName}/"
+            }
         } else { // Version 3.0.x
             project.copy {
                 from "${project.projectDir.path}/build/intermediates/bundles/"
                 from "${project.projectDir.path}/build/intermediates/manifests/full/"
                 include "${variantName}/**"
-                exclude "output.json"
+                exclude "**/output.json"
                 into temporaryDir.path
             }
         }
