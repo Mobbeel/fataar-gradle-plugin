@@ -423,7 +423,7 @@ class CopyDependenciesTask extends DefaultTask {
                             println "   /--> " + file.name
                             processPomFile(file.path)
                         } else {
-                            if (!file.name.contains("sources")) {
+                            if (!file.name.contains("sources") && !file.name.contains("javadoc")) {
                                 copyArtifactFrom(file.path)
                             }
                         }
