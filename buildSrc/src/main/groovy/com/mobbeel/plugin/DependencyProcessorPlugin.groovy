@@ -79,8 +79,8 @@ class DependencyProcessorPlugin implements Plugin<Project> {
         String taskName = "compileRs${variant.name.capitalize()}"
         return project.getTasks().create(taskName, JavaCompile.class, {
             it.source = sourceDir
-            it.sourceCompatibility = '1.8'
-            it.targetCompatibility = '1.8'
+            it.sourceCompatibility = project.android.compileOptions.sourceCompatibility
+            it.targetCompatibility = project.android.compileOptions.targetCompatibility
             it.classpath = classpath
             it.destinationDir project.file(destinationDir)
         })
