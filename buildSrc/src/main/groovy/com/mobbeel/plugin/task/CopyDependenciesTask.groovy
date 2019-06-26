@@ -128,7 +128,15 @@ class CopyDependenciesTask extends DefaultTask {
             def archiveName
 
             if (dependency instanceof ProjectDependency) {
-                Project dependencyProject = project.parent.findProject(dependency.name)
+                String group = dependency.group
+                Project dependencyProject
+                if (group.indexOf(".") > 1) {
+                    String subdirectory = group.substring(group.indexOf(".") + 1)
+                    dependencyProject = project.parent.findProject(subdirectory + ":" + dependency.name)
+                } else {
+                    dependencyProject = project.parent.findProject(dependency.name)
+                }
+
                 if (dependencyProject.plugins.hasPlugin('java-library')) {
                     println "Internal java dependency detected -> " + dependency.name
                     archiveName = dependencyProject.jar.archiveName
