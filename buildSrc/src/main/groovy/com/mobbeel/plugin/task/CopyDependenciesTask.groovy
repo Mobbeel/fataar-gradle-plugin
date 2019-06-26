@@ -165,11 +165,11 @@ class CopyDependenciesTask extends DefaultTask {
      * @return
      */
     def processDependency(Dependency dependency, String archiveName, String dependencyPath) {
-		println "files for dep: ${project.fileTree(dependencyPath).getFiles()}"
+        println "files for dep: ${project.fileTree(dependencyPath).getFiles()}"
         project.fileTree(dependencyPath).getFiles().each { file ->
             if (dependency.group in packagesToExclude) {
-				println "dependency in exclusion list"
-			} else if (file.name.endsWith(".pom")) {
+                println "dependency in exclusion list"
+            } else if (file.name.endsWith(".pom")) {
                 println "POM: " + file.name
                 processPomFile(file.path)
             } else {
@@ -177,7 +177,7 @@ class CopyDependenciesTask extends DefaultTask {
                     println "Artifact: " + file.name
                     if (file.name.endsWith(".aar")) {
                         processZipFile(file, dependency.name, dependency.group, dependency.version)
-						println "   |--> zip processed"
+                        println "   |--> zip processed"
                     } else if (file.name.endsWith(".jar")) {
                         if (!file.name.contains("sources")) {
                             copyArtifactFrom(file.path)
@@ -428,16 +428,16 @@ class CopyDependenciesTask extends DefaultTask {
                             println "   /--> " + file.name
                             processPomFile(file.path)
                         } else {
-							println "Artifact: " + file.name
-							if (file.name.endsWith(".aar")) {
-								processZipFile(file, it.artifactId.text(), it.groupId.text(), version)
-							} else if (file.name.endsWith(".jar")) {
-								if (!file.name.contains("sources") && !file.name.contains("javadoc")) {
-									copyArtifactFrom(file.path)
-								} else {
-									println "   |--> Exclude for source and javadoc jar"
-								}
-							}
+                            println "Artifact: " + file.name
+                            if (file.name.endsWith(".aar")) {
+                                processZipFile(file, it.artifactId.text(), it.groupId.text(), version)
+                            } else if (file.name.endsWith(".jar")) {
+                                if (!file.name.contains("sources") && !file.name.contains("javadoc")) {
+                                    copyArtifactFrom(file.path)
+                                } else {
+                                    println "   |--> Exclude for source and javadoc jar"
+                                }
+                            }
                         }
                     }
                 } else {
