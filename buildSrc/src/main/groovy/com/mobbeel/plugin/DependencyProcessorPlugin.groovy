@@ -58,6 +58,7 @@ class DependencyProcessorPlugin implements Plugin<Project> {
         String taskName = "copy${variant.name.capitalize()}Dependencies"
         return project.getTasks().create(taskName, CopyDependenciesTask.class, {
             it.packagesToInclude = extension.packagesToInclude
+            it.packagesToExclude = extension.packagesToExclude
             it.includeInnerDependencies = extension.includeAllInnerDependencies
             it.dependencies = project.configurations.api.getDependencies()
             it.variantName = variant.name
@@ -108,5 +109,6 @@ class DependencyProcessorPlugin implements Plugin<Project> {
     static class PluginExtension {
         boolean includeAllInnerDependencies
         String[] packagesToInclude
+        String[] packagesToExclude
     }
 }

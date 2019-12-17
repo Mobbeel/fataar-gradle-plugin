@@ -17,6 +17,7 @@ class CopyDependenciesTask extends DefaultTask {
     String variantName
     String gradleVersion
     String[] packagesToInclude = [""]
+    String[] packagesToExclude = [""]
 
     @TaskAction
     def executeTask() {
@@ -172,20 +173,24 @@ class CopyDependenciesTask extends DefaultTask {
      * @return
      */
     def processDependency(Dependency dependency, String archiveName, String dependencyPath) {
+        println "files for dep: ${project.fileTree(dependencyPath).getFiles()}"
         project.fileTree(dependencyPath).getFiles().each { file ->
-            if (file.name.endsWith(".pom")) {
+            if (dependency.group in packagesToExclude) {
+                println "dependency in exclusion list"
+            } else if (file.name.endsWith(".pom")) {
                 println "POM: " + file.name
                 processPomFile(file.path)
             } else {
                 if (archiveName == null || file.name == archiveName) {
                     println "Artifact: " + file.name
                     if (file.name.endsWith(".aar")) {
-                        processZipFile(file, dependency)
+                        processZipFile(file, dependency.name, dependency.group, dependency.version)
+                        println "   |--> zip processed"
                     } else if (file.name.endsWith(".jar")) {
                         if (!file.name.contains("sources")) {
                             copyArtifactFrom(file.path)
                         } else {
-                            println "   |--> Exclude for source jar"
+                            println "   |--> Exclude for source and javadoc jar"
                         }
                     }
                 }
@@ -194,8 +199,8 @@ class CopyDependenciesTask extends DefaultTask {
         println()
     }
 
-    def processZipFile(File aarFile, Dependency dependency) {
-        String tempDirPath = "${temporaryDir.path}/${dependency.name}_zip"
+    def processZipFile(File aarFile, String dependencyName, String dependencyGroup, String dependencyVersion) {
+        String tempDirPath = "${temporaryDir.path}/${dependencyName}_zip"
 
         project.copy {
             from project.zipTree(aarFile.path)
@@ -209,7 +214,7 @@ class CopyDependenciesTask extends DefaultTask {
             from "${tempFolder.path}"
             include "classes.jar"
             into "${temporaryDir.path}/${variantName}/libs"
-            def jarName = getJarNameFromDependency(dependency)
+            def jarName = getJarNameFromDependency(dependencyName, dependencyGroup, dependencyVersion)
             rename "classes.jar", jarName
         }
 
@@ -244,14 +249,14 @@ class CopyDependenciesTask extends DefaultTask {
         tempFolder.deleteDir()
     }
 
-    def getJarNameFromDependency(Dependency dependency) {
+    def getJarNameFromDependency(String dependencyName, String dependencyGroup, String dependencyVersion) {
         def jarName = ""
-        if (null != dependency.group) {
-            jarName += dependency.group.toLowerCase() + "-"
+        if (null != dependencyGroup) {
+            jarName += dependencyGroup.toLowerCase() + "-"
         }
-        jarName += dependency.name.toLowerCase()
-        if(null != dependency.version && !dependency.version.equalsIgnoreCase('unspecified')) {
-            jarName += "-" + dependency.version
+        jarName += dependencyName.toLowerCase()
+        if(null != dependencyVersion && !dependencyVersion.equalsIgnoreCase('unspecified')) {
+            jarName += "-" + dependencyVersion
         }
         jarName += ".jar"
 
@@ -424,15 +429,22 @@ class CopyDependenciesTask extends DefaultTask {
 
                 println "   |--> Inner dependency: " +  it.groupId.text() + ":" + it.artifactId.text() + ":" + version
 
-                if (includeInnerDependencies || it.groupId.text() in packagesToInclude) {
+                if ((includeInnerDependencies || it.groupId.text() in packagesToInclude) && !(it.groupId.text() in packagesToExclude)) {
                     subJarLocation += it.groupId.text() + "/" + it.artifactId.text() + "/" + version + "/"
                     project.fileTree(subJarLocation).getFiles().each { file ->
                         if (file.name.endsWith(".pom")) {
                             println "   /--> " + file.name
                             processPomFile(file.path)
                         } else {
-                            if (!file.name.contains("sources") && !file.name.contains("javadoc")) {
-                                copyArtifactFrom(file.path)
+                            println "Artifact: " + file.name
+                            if (file.name.endsWith(".aar")) {
+                                processZipFile(file, it.artifactId.text(), it.groupId.text(), version)
+                            } else if (file.name.endsWith(".jar")) {
+                                if (!file.name.contains("sources") && !file.name.contains("javadoc")) {
+                                    copyArtifactFrom(file.path)
+                                } else {
+                                    println "   |--> Exclude for source and javadoc jar"
+                                }
                             }
                         }
                     }
